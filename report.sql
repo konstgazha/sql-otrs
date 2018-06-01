@@ -16,8 +16,7 @@ CREATE TEMPORARY TABLE IF NOT EXISTS main_ticket_info AS
     LEFT JOIN users usr ON t.user_id = usr.id
     LEFT JOIN ticket_state ts ON t.ticket_state_id = ts.id
     LEFT JOIN queue q ON t.queue_id = q.id
-    WHERE
-        t.create_time > @date_threshold
+    WHERE t.create_time > @date_threshold
 );
 
 # Client request info
@@ -48,4 +47,32 @@ CREATE TEMPORARY TABLE IF NOT EXISTS client_request_info AS
         GROUP BY art.ticket_id
     ) note_info
     ON main_art_info.tid = note_info.tid
+);
+
+DROP TEMPORARY TABLE IF EXISTS pending_auto_close;
+CREATE TEMPORARY TABLE IF NOT EXISTS pending_auto_close AS
+(
+    SELECT
+        MAX(id),
+        ticket_id tid,
+        create_time auto_close
+    FROM ticket_history th
+    WHERE
+        th.create_time > @date_threshold
+        AND th.name IN ('%%open%%pending auto close+%%', '%%pending auto close+%%open%%')
+    GROUP BY tid
+);
+
+DROP TEMPORARY TABLE IF EXISTS closed_successful;
+CREATE TEMPORARY TABLE IF NOT EXISTS closed_successful AS
+(
+    SELECT
+        MAX(id),
+        ticket_id tid,
+        create_time closed
+    FROM ticket_history th
+    WHERE
+        th.create_time > @date_threshold
+        AND th.name IN ('%%pending auto close+%%closed successful%%', '%%Close')
+    GROUP BY tid
 );
