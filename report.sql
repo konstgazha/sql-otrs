@@ -52,27 +52,46 @@ CREATE TEMPORARY TABLE IF NOT EXISTS client_request_info AS
 DROP TEMPORARY TABLE IF EXISTS pending_auto_close;
 CREATE TEMPORARY TABLE IF NOT EXISTS pending_auto_close AS
 (
-    SELECT
-        MAX(id),
-        ticket_id tid,
-        create_time auto_close
+    SELECT tid, create_time auto_close
     FROM ticket_history th
-    WHERE
-        th.create_time > @date_threshold
-        AND th.name IN ('%%open%%pending auto close+%%', '%%pending auto close+%%open%%')
-    GROUP BY tid
+    INNER JOIN (SELECT MAX(id) id, ticket_id tid
+                    FROM ticket_history th
+                    WHERE
+                        th.create_time > @date_threshold
+                        AND th.state_id IN (7, 8)
+                    GROUP BY tid) thids
+    ON th.id = thids.id
+    WHERE th.create_time > @date_threshold
 );
 
 DROP TEMPORARY TABLE IF EXISTS closed_successful;
 CREATE TEMPORARY TABLE IF NOT EXISTS closed_successful AS
 (
-    SELECT
-        MAX(id),
-        ticket_id tid,
-        create_time closed
+    SELECT tid, create_time closed
     FROM ticket_history th
-    WHERE
-        th.create_time > @date_threshold
-        AND th.name IN ('%%pending auto close+%%closed successful%%', '%%Close')
-    GROUP BY tid
+    INNER JOIN (SELECT MAX(id) id, ticket_id tid
+                    FROM ticket_history th
+                    WHERE
+                        th.create_time > @date_threshold
+                        AND th.state_id = 2
+                    GROUP BY tid) thids
+    ON th.id = thids.id
+    WHERE th.create_time > @date_threshold
 );
+
+SELECT tn,
+         mti.tid,
+         tcreatetime,
+         service_name,
+         user_name,
+         ticket_state_name,
+         queue_name,
+         artbody,
+         artsubject,
+         note,
+         auto_close,
+         closed
+FROM main_ticket_info mti
+LEFT JOIN client_request_info cri ON mti.tid = cri.tid
+LEFT JOIN pending_auto_close pac ON mti.tid = pac.tid
+LEFT JOIN closed_successful cs ON mti.tid = cs.tid
