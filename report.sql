@@ -1,4 +1,4 @@
-SET @date_threshold = '2018-05-01 00:00:00';
+SET @date_threshold = '2018-04-01 00:00:00';
 
 DROP TEMPORARY TABLE IF EXISTS main_ticket_info;
 CREATE TEMPORARY TABLE IF NOT EXISTS main_ticket_info AS
@@ -79,19 +79,31 @@ CREATE TEMPORARY TABLE IF NOT EXISTS closed_successful AS
     WHERE th.create_time > @date_threshold
 );
 
+DROP TEMPORARY TABLE IF EXISTS moved;
+CREATE TEMPORARY TABLE IF NOT EXISTS moved AS
+(
+    SELECT COUNT(*) moved_count, th.ticket_id tid
+    FROM ticket_history th
+    WHERE create_time > @date_threshold
+    AND history_type_id = 16
+    GROUP BY th.ticket_id
+);
+
 SELECT tn,
-         mti.tid,
-         tcreatetime,
-         service_name,
-         user_name,
-         ticket_state_name,
-         queue_name,
-         artbody,
-         artsubject,
-         note,
-         auto_close,
-         closed
+       mti.tid,
+       tcreatetime,
+       service_name,
+       user_name,
+       ticket_state_name,
+       queue_name,
+       artbody,
+       artsubject,
+       note,
+       auto_close,
+       closed,
+       moved_count
 FROM main_ticket_info mti
 LEFT JOIN client_request_info cri ON mti.tid = cri.tid
 LEFT JOIN pending_auto_close pac ON mti.tid = pac.tid
 LEFT JOIN closed_successful cs ON mti.tid = cs.tid
+LEFT JOIN moved ON mti.tid = moved.tid
