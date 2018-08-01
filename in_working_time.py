@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Aug  1 12:56:07 2018
+
+@author: gazhakv
+"""
+
 import pandas as pd
 from datetime import datetime
 from dateutil import parser
@@ -26,10 +33,10 @@ def compute_working_time(_start, _end, dayfirst=False):
             first_day = 1
         for day in range(first_day, days):
             next_date = str(day) + '.' + str(month) + '.' + str(YEAR)
-            next_date = parser.parse(next_date, dayfirst=dayfirst).date()
+            next_date = parser.parse(next_date, dayfirst=True).date()
             if ((next_date.weekday() < 5) or \
-               (next_date in [parser.parse(i, dayfirst=dayfirst).date() for i in WORKING_DATES])) and \
-               (next_date not in [parser.parse(i, dayfirst=dayfirst).date() for i in HOLIDAYS]):
+               (next_date in [parser.parse(i, dayfirst=True).date() for i in WORKING_DATES])) and \
+               (next_date not in [parser.parse(i, dayfirst=True).date() for i in HOLIDAYS]):
                 start_hour = 8
                 start_minute = 30
                 end_hour = 17
@@ -71,34 +78,35 @@ def compute_working_time(_start, _end, dayfirst=False):
                 # print(next_date, result)
     return result
 
-def make_report():
-    df = pd.read_csv('report.csv', sep=';', encoding='ansi')
-    emergence_time = df['first_line_emergence_time']
-    lock_time = df['first_move_or_lock_time']
-    time_create = df['time_create']
-    autoclose = df['autoclose']
-    time_close = df['time_close']
-    in_working = []
-    auto_close = []
-    forced_close = []
-    for i in range(len(df)):
-        try:
-            result = compute_working_time(emergence_time[i], lock_time[i], True)
-            in_working.append(result)
-        except Exception as e:
-            in_working.append('')
-        try:
-            result = compute_working_time(time_create[i], autoclose[i], True)
-            auto_close.append(result)
-        except Exception as e:
-            auto_close.append('')
-        try:
-            result = compute_working_time(time_create[i], time_close[i], True)
-            forced_close.append(result)
-        except Exception as e:
-            forced_close.append('')
-    df['in_working'] = in_working
-    df['auto_closed'] = auto_close
-    df['forced_close'] = forced_close
-    df.to_csv('result.csv', sep=';')
+#def make_report():
+df = pd.read_csv('report.csv', sep=';', encoding='ansi')
+emergence_time = df['first_line_emergence_time']
+lock_time = df['first_move_or_lock_time']
+time_create = df['tcreatetime']
+autoclose = df['auto_close']
+time_close = df['closed']
+in_working = []
+auto_close = []
+forced_close = []
+for i in range(len(df)):
+    try:
+        result = compute_working_time(emergence_time[i], lock_time[i], False)
+        in_working.append(result)
+    except Exception as e:
+        in_working.append('')
+    try:
+        result = compute_working_time(time_create[i], autoclose[i], False)
+        auto_close.append(result)
+    except Exception as e:
+        auto_close.append('')
+    try:
+        result = compute_working_time(time_create[i], time_close[i], False)
+        forced_close.append(result)
+    except Exception as e:
+        forced_close.append('')
+df['in_working'] = in_working
+df['auto_closed'] = auto_close
+df['forced_close'] = forced_close
+df.to_csv('result.csv', sep=';')
 
+#make_report()

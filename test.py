@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Aug  1 13:14:50 2018
+
+@author: gazhakv
+"""
+
 import unittest
 from in_working_time import compute_working_time
 from dateutil import parser
@@ -39,6 +46,18 @@ class TestComputeTime(unittest.TestCase):
         _end = '16.04.2018  14:45:06'
         result = compute_working_time(_start, _end, True)
         self.assertEqual(result, 301800)
-        
+
+    def test_case(self):
+        start = '02.07.2018 14:50'
+        end = '03.07.2018 8:20'
+        res = compute_working_time(start, end, True)
+        self.assertEqual(res, 9600)
+    
+    def test_case2(self):
+        start = '2018-07-01 14:50'
+        end = '2018-07-02 08:10'
+        res = compute_working_time(start, end, False)
+        self.assertEqual(res, 0)
+    
 if __name__ == '__main__':
     unittest.main()
