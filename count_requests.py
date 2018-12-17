@@ -9,12 +9,13 @@ import pandas as pd
 from datetime import datetime, timedelta
 from dateutil import parser
 import seaborn
+import matplotlib.pyplot as plt
 
 
 db = MySQLdb.connect("10.0.1.195",
-                     "",
-                     "",
-                     "",
+                     "report",
+                     "ujO82ufJzxaQ",
+                     "otrs",
                      charset='utf8',
                      init_command='SET NAMES UTF8')
 
@@ -209,8 +210,9 @@ data[0]['tcreatetime'].time() > parser.parse('8:30').time()
 
 users = list(set([d['user_name'] for d in data]))
 #df = pd.DataFrame([0]*len(users), users, [parser.parse(date).strftime('%d.%m.%Y')])
-queues = list(set([d['service_name'] for d in data]))
-df = pd.DataFrame([0]*len(queues), queues, [parser.parse(date).strftime('%d.%m.%Y')])
+services = list(set([d['service_name'] for d in data]))
+services = [s for s in services if s]
+df = pd.DataFrame([0]*len(services), services, [parser.parse(date).strftime('%d.%m.%Y')])
 
 
 first_line_users = ['Чурянина Ольга', 'Портнова Дарья Сергеевна',
@@ -218,6 +220,8 @@ first_line_users = ['Чурянина Ольга', 'Портнова Дарья 
                     'Хатылова Лилия', 'Курманова Диляра Жаудатовна',
                     'Никитина Ольга', 'Деняева Светлана Юрьевна',
                     'Уварова Марина']
+
+
 
 def count_first_line():
     # FIRST LINE! FIIIIRST LIIINE!!!!! THIRST LINE
@@ -258,10 +262,12 @@ def count_others():
 
 def count_similar_queue():
     for k in data:
-        if k['others_line_emergence_time']:
-            current_date = k['others_line_emergence_time']
-        else:
-            current_date = k['tcreatetime']
+        if not k['service_name']:
+            continue
+        #if k['others_line_emergence_time']:
+        #    current_date = k['others_line_emergence_time']
+        #else:
+        current_date = k['tcreatetime']
         if 'close' in k['ticket_state_name']:
             if k['auto_close']:
                 if k['auto_close'].time() < parser.parse('8:30').time():
@@ -287,4 +293,10 @@ def count_similar_queue():
 #count_others()
 count_similar_queue()
 
-df.to_csv('count_request.csv', encoding='ansi')
+# =============================================================================
+# df.sort_index(inplace=True)
+# df.to_csv('count_request.csv', encoding='ansi')
+# fig, ax = plt.subplots(figsize=(20, 40))
+# seaborn.heatmap(df, ax=ax)
+# plt.show()
+# =============================================================================
